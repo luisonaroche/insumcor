@@ -52,7 +52,8 @@
             border-bottom: 2px solid #ffcc00;
             position: relative;
         }
-         .logo-container {
+        
+        .logo-container {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -66,7 +67,6 @@
             width: 180px;
             height: 55px;
             object-fit: contain;
-
         }
         
         .company-info {
@@ -207,10 +207,6 @@
             cursor: pointer;
             transition: all 0.3s;
             min-width: 160px;
-        }
-        
-        .save-btn {
-            background: linear-gradient(to bottom, #0066a1, #004d7a);
         }
         
         .load-btn {
@@ -448,6 +444,20 @@
             background-color: #f44336;
             color: white;
         }
+        
+        .auto-save-indicator {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            z-index: 1000;
+            background-color: #17a2b8;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
     </style>
 </head>
 <body oncontextmenu="return false" onkeydown="return disableKeys(event)">
@@ -469,13 +479,10 @@
     </div>
     
     <div class="container" style="display: none;" id="app-container">
-
-     <div class="container" style="display: none;" id="main-container">
         <div class="header">
             <div class="logo-container">
                 <img src="https://cdn.imweb.me/upload/S202402132ab908c48484a/ad9072e67d6f0.png" alt="Logo de la empresa" class="logo-img">
             </div>
-
             
             <div class="company-info">
                 <div class="company-name">Hansae GSN S.A.</div>
@@ -516,8 +523,7 @@
         <div class="form-title">REGISTRO MENSUAL DE SOLICITUDES POR DORMITORIO</div>
         
         <div class="buttons-container">
-            <button class="action-btn save-btn" onclick="secureExecute(guardarDatos)">Guardar</button>
-            <button class="action-btn load-btn" onclick="secureExecute(cargarDatos)">Cargar</button>
+            <button class="action-btn load-btn" onclick="secureExecute(cargarDatos)">Cargar Datos</button>
             <button class="action-btn excel-btn" onclick="secureExecute(exportarExcel)">Exportar a Excel</button>
         </div>
         
@@ -538,8 +544,8 @@
         </div>
         
         <div class="saved-data-info">
-            <h3>💾 Datos Guardados</h3>
-            <p>Los datos se guardan en Firebase Cloud y en el almacenamiento local de tu navegador.</p>
+            <h3>💾 Datos Guardados Automáticamente</h3>
+            <p>Los datos se guardan automáticamente en Firebase Cloud y en el almacenamiento local.</p>
         </div>
         
         <div class="footer">
@@ -549,24 +555,25 @@
 
     <div id="notification" class="notification"></div>
     <div id="firebase-status" class="firebase-status firebase-disconnected">Firebase: Desconectado</div>
+    <div id="auto-save-indicator" class="auto-save-indicator">Guardando...</div>
 
     <script>
         // =============================================
-        // CONFIGURACIÓN DE FIREBASE - REEMPLAZA CON TUS DATOS
+        // CONFIGURACIÓN DE FIREBASE - TUS DATOS REALES
         // =============================================
         const firebaseConfig = {
-  apiKey: "AIzaSyCZRCjcH4v8J_zBrfVTJ4uzP_26Rsjdkhc",
-  authDomain: "control-agua-y-huevos-kr.firebaseapp.com",
-  projectId: "control-agua-y-huevos-kr",
-  storageBucket: "control-agua-y-huevos-kr.firebasestorage.app",
-  messagingSenderId: "107731658261",
-  appId: "1:107731658261:web:437b142fd83024e9d2901c",
-  measurementId: "G-5K75V1WLG0"
+            apiKey: "AIzaSyCZRCjcH4v8J_zBrfVTJ4uzP_26Rsjdkhc",
+            authDomain: "control-agua-y-huevos-kr.firebaseapp.com",
+            projectId: "control-agua-y-huevos-kr",
+            storageBucket: "control-agua-y-huevos-kr.firebasestorage.app",
+            messagingSenderId: "107731658261",
+            appId: "1:107731658261:web:437b142fd83024e9d2901c",
+            measurementId: "G-5K75V1WLG0"
         };
         
         // Inicializar Firebase
-        const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
         
         // Verificar conexión a Firebase
         const firebaseStatus = document.getElementById('firebase-status');
@@ -608,6 +615,8 @@ const analytics = getAnalytics(app);
         };
         
         let usuarioActual = null;
+        let autoSaveTimeout = null;
+        const AUTO_SAVE_DELAY = 2000; // 2 segundos después de la última modificación
         
         // Función para iniciar sesión
         function iniciarSesion() {
@@ -654,6 +663,9 @@ const analytics = getAnalytics(app);
             }
             
             try {
+                // Mostrar indicador de guardado
+                mostrarIndicadorGuardado();
+                
                 const mes = parseInt(document.getElementById('mes-control').value);
                 const anio = parseInt(document.getElementById('anio-control').value);
                 
@@ -683,7 +695,8 @@ const analytics = getAnalytics(app);
                 const mesAnio = `${anio}-${(mes + 1).toString().padStart(2, '0')}`;
                 await db.collection('controlDormitorios').doc(mesAnio).set(datos);
                 
-                mostrarNotificacion('Datos guardados en la nube correctamente', 'success');
+                // No mostrar notificación para no interrumpir al usuario
+                // mostrarNotificacion('Datos guardados en la nube correctamente', 'success');
                     
             } catch (error) {
                 console.error("Error al guardar en Firebase:", error);
@@ -716,6 +729,33 @@ const analytics = getAnalytics(app);
                 console.error("Error al cargar desde Firebase:", error);
                 mostrarNotificacion('Error al cargar desde la nube: ' + error.message, 'error');
             }
+        }
+        
+        // =============================================
+        // GUARDADO AUTOMÁTICO
+        // =============================================
+        
+        // Programar guardado automático
+        function programarGuardadoAutomatico() {
+            // Cancelar el timeout anterior si existe
+            if (autoSaveTimeout) {
+                clearTimeout(autoSaveTimeout);
+            }
+            
+            // Programar nuevo guardado
+            autoSaveTimeout = setTimeout(() => {
+                guardarDatos();
+            }, AUTO_SAVE_DELAY);
+        }
+        
+        // Mostrar indicador de guardado
+        function mostrarIndicadorGuardado() {
+            const indicator = document.getElementById('auto-save-indicator');
+            indicator.style.opacity = '1';
+            
+            setTimeout(() => {
+                indicator.style.opacity = '0';
+            }, 1500);
         }
         
         // =============================================
@@ -756,11 +796,15 @@ const analytics = getAnalytics(app);
             document.getElementById('mes-control').addEventListener('change', function() {
                 actualizarDiasDelMes();
                 generarTabla();
+                // Guardar automáticamente al cambiar de mes
+                programarGuardadoAutomatico();
             });
             
             document.getElementById('anio-control').addEventListener('change', function() {
                 actualizarDiasDelMes();
                 generarTabla();
+                // Guardar automáticamente al cambiar de año
+                programarGuardadoAutomatico();
             });
             
             // Establecer mes y año actual por defecto
@@ -890,7 +934,8 @@ const analytics = getAnalytics(app);
                             td.classList.add('paper-bg');
                         }
                         
-                        td.innerHTML = `<input type="text" name="${dormitorio}-${producto}-${i}" data-dormitorio="${dormitorio}" data-producto="${producto}" data-dia="${i}" onchange="calcularTotal(this)" placeholder="0">`;
+                        // Modificado: agregar evento input para guardado automático
+                        td.innerHTML = `<input type="text" name="${dormitorio}-${producto}-${i}" data-dormitorio="${dormitorio}" data-producto="${producto}" data-dia="${i}" oninput="calcularTotal(this); programarGuardadoAutomatico();" placeholder="0">`;
                         fila.appendChild(td);
                     }
                     
@@ -1032,7 +1077,8 @@ const analytics = getAnalytics(app);
                 const mesAnio = `${anio}-${(mes + 1).toString().padStart(2, '0')}`;
                 localStorage.setItem(`controlDormitorios_${mesAnio}`, JSON.stringify(datos));
                 
-                mostrarNotificacion('Datos guardados localmente correctamente', 'success');
+                // No mostrar notificación para no interrumpir al usuario
+                // mostrarNotificacion('Datos guardados localmente correctamente', 'success');
                     
             } catch (error) {
                 mostrarNotificacion('Error al guardar los datos locales: ' + error.message, 'error');
@@ -1258,8 +1304,7 @@ const analytics = getAnalytics(app);
             try {
                 // Verificar que la función es válida y permitida
                 if (typeof func === 'function' && 
-                    (func.name === 'guardarDatos' || 
-                     func.name === 'cargarDatos' || 
+                    (func.name === 'cargarDatos' || 
                      func.name === 'exportarExcel')) {
                     return func();
                 } else {
@@ -1296,7 +1341,7 @@ const analytics = getAnalytics(app);
         // Agregar evento al botón de login
         document.getElementById('login-btn').addEventListener('click', iniciarSesion);
         
-        // Permitir login con Enter
+        // Permitir login with Enter
         document.getElementById('password').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 iniciarSesion();
