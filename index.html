@@ -478,6 +478,7 @@
         </div>
     </div>
     
+    <!-- Contenedor principal de la aplicación (inicialmente oculto) -->
     <div class="container" style="display: none;" id="app-container">
         <div class="header">
             <div class="logo-container">
@@ -623,6 +624,15 @@
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             const mensaje = document.getElementById('login-message');
+            
+            // Validar que se hayan ingresado datos
+            if (!username || !password) {
+                mensaje.textContent = 'Por favor, ingrese usuario y contraseña';
+                setTimeout(() => {
+                    mensaje.textContent = '';
+                }, 3000);
+                return;
+            }
             
             if (usuariosPermitidos[username] && usuariosPermitidos[username] === password) {
                 usuarioActual = username;
@@ -1248,7 +1258,7 @@
             e.preventDefault();
             showProtectionMessage();
             return false;
-        });
+        }
         
         // Desactivar teclas de función
         function disableKeys(e) {
@@ -1341,7 +1351,7 @@
         // Agregar evento al botón de login
         document.getElementById('login-btn').addEventListener('click', iniciarSesion);
         
-        // Permitir login with Enter
+        // Permitir login con Enter
         document.getElementById('password').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 iniciarSesion();
