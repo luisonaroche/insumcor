@@ -1,0 +1,1303 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control por Dormitorio - Sistema Seguro</title>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f0f3f5;
+            color: #333;
+            line-height: 1.4;
+            padding: 20px;
+            min-height: 100vh;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        .container {
+            width: 95%;
+            max-width: 1800px;
+            background: white;
+            padding: 25px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+            margin: 0 auto;
+            overflow-x: auto;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ffcc00;
+            position: relative;
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            min-width: 300px;
+        }
+        
+        .company-info {
+            text-align: right;
+        }
+        
+        .company-name {
+            font-size: 22px;
+            font-weight: bold;
+            color: #0066a1;
+            margin-bottom: 8px;
+        }
+        
+        .form-title {
+            text-align: center;
+            background-color: #ffcc00;
+            padding: 12px;
+            margin: 20px 0;
+            border-radius: 6px;
+            font-size: 18px;
+            color: #333;
+            font-weight: bold;
+        }
+        
+        .info-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        
+        .info-box {
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #0066a1;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            table-layout: fixed;
+            margin-bottom: 20px;
+        }
+        
+        th {
+            background-color: #ffcc00;
+            padding: 10px 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        td {
+            padding: 10px 8px;
+            border: 1px solid #ddd;
+            text-align: center;
+            height: 50px;
+            vertical-align: middle;
+        }
+        
+        .room-cell {
+            text-align: center;
+            background-color: #f5f5f5;
+            width: 120px;
+            position: sticky;
+            left: 0;
+            z-index: 10;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .product-cell {
+            text-align: center;
+            background-color: #e6f7ff;
+            width: 100px;
+            position: sticky;
+            left: 120px;
+            z-index: 10;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        
+        .day-cell {
+            width: 70px;
+            min-width: 70px;
+        }
+        
+        .input-cell {
+            width: 80px;
+            min-width: 80px;
+        }
+        
+        .total-cell {
+            width: 90px;
+            min-width: 90px;
+            background-color: #e6f7ff;
+            font-weight: bold;
+            font-size: 15px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .buttons-container {
+            display: flex;
+            flex-wrap: nowrap;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px auto;
+        }
+        
+        .action-btn {
+            padding: 12px 20px;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 160px;
+        }
+        
+        .save-btn {
+            background: linear-gradient(to bottom, #0066a1, #004d7a);
+        }
+        
+        .load-btn {
+            background: linear-gradient(to bottom, #9c27b0, #7b1fa2);
+        }
+        
+        .excel-btn {
+            background: linear-gradient(to bottom, #0d8044, #0a6636);
+        }
+        
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        input[type="text"], select {
+            border: 1px solid #ccc;
+            padding: 8px;
+            width: 100%;
+            background: white;
+            font-size: 14px;
+            text-align: center;
+            border-radius: 4px;
+            height: 40px;
+        }
+        
+        select {
+            padding: 8px;
+            height: 40px;
+        }
+        
+        .main-container {
+            margin-bottom: 20px;
+            overflow-x: auto;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 5px;
+            background: white;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s;
+            text-align: center;
+            font-size: 16px;
+            min-width: 300px;
+        }
+        
+        .success {
+            background-color: #4caf50;
+        }
+        
+        .error {
+            background-color: #f44336;
+        }
+        
+        .water-bg {
+            background-color: #e6f7ff;
+        }
+        
+        .egg-bg {
+            background-color: #fff2cc;
+        }
+        
+        .paper-bg {
+            background-color: #fce4ec;
+        }
+        
+        .saved-data-info {
+            background-color: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            font-size: 14px;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .saved-data-info h3 {
+            margin-bottom: 10px;
+            color: #2e7d32;
+            font-size: 16px;
+        }
+        
+        input.filled {
+            background-color: #f0f8ff;
+            font-weight: bold;
+        }
+        
+        .day-header {
+            font-weight: bold;
+            background-color: #ffcc00;
+            font-size: 12px;
+        }
+        
+        @media (min-width: 1920px) {
+            .container {
+                width: 90%;
+                max-width: 2000px;
+            }
+            
+            .day-cell {
+                width: 80px;
+            }
+            
+            .input-cell {
+                width: 90px;
+            }
+        }
+        
+        .protection-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            display: none;
+        }
+        
+        .protection-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            z-index: 10000;
+            display: none;
+        }
+        
+        /* Nuevos estilos para el login */
+        .login-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        
+        .login-form {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .login-form h2 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #0066a1;
+        }
+        
+        .login-input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(to bottom, #0066a1, #004d7a);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .login-btn:hover {
+            background: linear-gradient(to bottom, #004d7a, #003355);
+        }
+        
+        .user-info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #f0f3f5;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .logout-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .firebase-status {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+        
+        .firebase-connected {
+            background-color: #4caf50;
+            color: white;
+        }
+        
+        .firebase-disconnected {
+            background-color: #f44336;
+            color: white;
+        }
+    </style>
+</head>
+<body oncontextmenu="return false" onkeydown="return disableKeys(event)">
+    <div class="protection-overlay" id="protection-overlay"></div>
+    <div class="protection-message" id="protection-message">
+        <h3>Acceso Restringido</h3>
+        <p>Esta función no está permitida por políticas de seguridad.</p>
+    </div>
+    
+    <!-- Contenedor de login (inicialmente visible) -->
+    <div id="login-container" class="login-container">
+        <div class="login-form">
+            <h2>Acceso al Sistema</h2>
+            <input type="text" id="username" class="login-input" placeholder="Usuario" autocomplete="off">
+            <input type="password" id="password" class="login-input" placeholder="Contraseña" autocomplete="off">
+            <button id="login-btn" class="login-btn">Iniciar Sesión</button>
+            <div id="login-message" style="color: red; margin-top: 10px; text-align: center;"></div>
+        </div>
+    </div>
+    
+    <div class="container" style="display: none;" id="app-container">
+        <div class="header">
+            <div class="logo-container">
+                <div style="font-size: 20px; font-weight: bold; color: #0066a1;">CONTROL POR DORMITORIO</div>
+            </div>
+            <div class="company-info">
+                <div class="company-name">Hansae GSN S.A.</div>
+                <p style="font-size: 16px;">Sistema de Control Mensual - Agua, Huevos, Papel</p>
+            </div>
+            <div class="user-info">
+                <span id="user-display">No autenticado</span>
+                <button class="logout-btn" onclick="cerrarSesion()">Cerrar Sesión</button>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <div class="info-box">
+                <span class="info-label">Mes:</span>
+                <select id="mes-control">
+                    <option value="0">Enero</option>
+                    <option value="1">Febrero</option>
+                    <option value="2">Marzo</option>
+                    <option value="3">Abril</option>
+                    <option value="4">Mayo</option>
+                    <option value="5">Junio</option>
+                    <option value="6">Julio</option>
+                    <option value="7">Agosto</option>
+                    <option value="8">Septiembre</option>
+                    <option value="9">Octubre</option>
+                    <option value="10">Noviembre</option>
+                    <option value="11">Diciembre</option>
+                </select>
+            </div>
+            <div class="info-box">
+                <span class="info-label">Año:</span>
+                <select id="anio-control">
+                    <!-- Los años se generarán con JavaScript -->
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-title">REGISTRO MENSUAL DE SOLICITUDES POR DORMITORIO</div>
+        
+        <div class="buttons-container">
+            <button class="action-btn save-btn" onclick="secureExecute(guardarDatos)">Guardar</button>
+            <button class="action-btn load-btn" onclick="secureExecute(cargarDatos)">Cargar</button>
+            <button class="action-btn excel-btn" onclick="secureExecute(exportarExcel)">Exportar a Excel</button>
+        </div>
+        
+        <div class="main-container">
+            <table id="registro-diario">
+                <thead>
+                    <tr>
+                        <th class="room-cell">Apartamento</th>
+                        <th class="product-cell">Producto</th>
+                        <!-- Los días se generarán con JavaScript -->
+                        <th class="total-cell">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Los datos se generarán con JavaScript -->
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="saved-data-info">
+            <h3>💾 Datos Guardados</h3>
+            <p>Los datos se guardan en Firebase Cloud y en el almacenamiento local de tu navegador.</p>
+        </div>
+        
+        <div class="footer">
+            <p>Este documento es parte del sistema de control - Formato ID: F-DORM-2023 - Versión: 1.0</p>
+        </div>
+    </div>
+
+    <div id="notification" class="notification"></div>
+    <div id="firebase-status" class="firebase-status firebase-disconnected">Firebase: Desconectado</div>
+
+    <script>
+        // =============================================
+        // CONFIGURACIÓN DE FIREBASE - REEMPLAZA CON TUS DATOS
+        // =============================================
+        const firebaseConfig = {
+            apiKey: "TU_API_KEY",
+            authDomain: "TU_PROYECTO.firebaseapp.com",
+            projectId: "TU_PROYECTO_ID",
+            storageBucket: "TU_PROYECTO.appspot.com",
+            messagingSenderId: "TU_MESSAGING_SENDER_ID",
+            appId: "TU_APP_ID"
+        };
+        
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        
+        // Verificar conexión a Firebase
+        const firebaseStatus = document.getElementById('firebase-status');
+        db.enableNetwork()
+        .then(() => {
+            firebaseStatus.textContent = "Firebase: Conectado";
+            firebaseStatus.className = "firebase-status firebase-connected";
+        })
+        .catch((error) => {
+            firebaseStatus.textContent = "Firebase: Error de conexión";
+            firebaseStatus.className = "firebase-status firebase-disconnected";
+            console.error("Error de conexión a Firebase:", error);
+        });
+        
+        // =============================================
+        // SISTEMA DE USUARIOS
+        // =============================================
+        const usuariosPermitidos = {
+            "admin": "admin123",
+            "usuario1": "clave1",
+            "usuario2": "clave2",
+            "usuario3": "clave3",
+            "usuario4": "clave4",
+            "usuario5": "clave5",
+            "usuario6": "clave6",
+            "usuario7": "clave7",
+            "usuario8": "clave8",
+            "usuario9": "clave9",
+            "usuario10": "clave10",
+            "supervisor1": "sup123",
+            "supervisor2": "sup456",
+            "manager1": "mgr789",
+            "manager2": "mgr012",
+            "auditor1": "aud345",
+            "auditor2": "aud678",
+            "coordinador1": "cor901",
+            "coordinador2": "cor234",
+            "asistente1": "asi567"
+        };
+        
+        let usuarioActual = null;
+        
+        // Función para iniciar sesión
+        function iniciarSesion() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const mensaje = document.getElementById('login-message');
+            
+            if (usuariosPermitidos[username] && usuariosPermitidos[username] === password) {
+                usuarioActual = username;
+                document.getElementById('login-container').style.display = 'none';
+                document.getElementById('app-container').style.display = 'block';
+                document.getElementById('user-display').textContent = `Usuario: ${username}`;
+                mostrarNotificacion('Sesión iniciada correctamente', 'success');
+                
+                // Inicializar la aplicación después de iniciar sesión
+                inicializarAplicacion();
+            } else {
+                mensaje.textContent = 'Usuario o contraseña incorrectos';
+                setTimeout(() => {
+                    mensaje.textContent = '';
+                }, 3000);
+            }
+        }
+        
+        // Función para cerrar sesión
+        function cerrarSesion() {
+            usuarioActual = null;
+            document.getElementById('login-container').style.display = 'flex';
+            document.getElementById('app-container').style.display = 'none';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            mostrarNotificacion('Sesión cerrada', 'success');
+        }
+        
+        // =============================================
+        // INTEGRACIÓN CON FIREBASE
+        // =============================================
+        
+        // Guardar datos en Firebase
+        async function guardarDatosFirebase() {
+            if (!usuarioActual) {
+                mostrarNotificacion('Debe iniciar sesión para guardar', 'error');
+                return;
+            }
+            
+            try {
+                const mes = parseInt(document.getElementById('mes-control').value);
+                const anio = parseInt(document.getElementById('anio-control').value);
+                
+                const datos = {
+                    mes: mes,
+                    anio: anio,
+                    registros: {},
+                    ultimaActualizacion: new Date().toISOString(),
+                    usuario: usuarioActual
+                };
+                
+                // Recopilar datos de todos los inputs
+                dormitorios.forEach(dormitorio => {
+                    datos.registros[dormitorio] = {};
+                    
+                    productos.forEach(producto => {
+                        datos.registros[dormitorio][producto] = {};
+                        
+                        for (let i = 1; i <= diasDelMes; i++) {
+                            const input = document.querySelector(`input[name="${dormitorio}-${producto}-${i}"]`);
+                            datos.registros[dormitorio][producto][i] = input.value || '';
+                        }
+                    });
+                });
+                
+                // Guardar en Firebase
+                const mesAnio = `${anio}-${(mes + 1).toString().padStart(2, '0')}`;
+                await db.collection('controlDormitorios').doc(mesAnio).set(datos);
+                
+                mostrarNotificacion('Datos guardados en la nube correctamente', 'success');
+                    
+            } catch (error) {
+                console.error("Error al guardar en Firebase:", error);
+                mostrarNotificacion('Error al guardar en la nube: ' + error.message, 'error');
+            }
+        }
+        
+        // Cargar datos desde Firebase
+        async function cargarDatosFirebase() {
+            if (!usuarioActual) {
+                mostrarNotificacion('Debe iniciar sesión para cargar', 'error');
+                return;
+            }
+            
+            try {
+                const mes = parseInt(document.getElementById('mes-control').value);
+                const anio = parseInt(document.getElementById('anio-control').value);
+                const mesAnio = `${anio}-${(mes + 1).toString().padStart(2, '0')}`;
+                
+                const doc = await db.collection('controlDormitorios').doc(mesAnio).get();
+                
+                if (doc.exists) {
+                    const datos = doc.data();
+                    aplicarDatos(datos);
+                    mostrarNotificacion('Datos cargados desde la nube correctamente', 'success');
+                } else {
+                    mostrarNotificacion('No hay datos en la nube para ' + mesAnio, 'error');
+                }
+            } catch (error) {
+                console.error("Error al cargar desde Firebase:", error);
+                mostrarNotificacion('Error al cargar desde la nube: ' + error.message, 'error');
+            }
+        }
+        
+        // =============================================
+        // CÓDIGO ORIGINAL DE LA APLICACIÓN (MODIFICADO)
+        // =============================================
+        
+        // Lista de dormitorios
+        const dormitorios = [
+            "T-1 802A",
+            "T-1 808",
+            "T-1 706", 
+            "T-2 1407",
+            "T-2 1003",
+            "T-2 907",
+            "T-2 1402",
+            "T-2 1606"
+        ];
+
+        // Lista de productos
+        const productos = [
+            "Water Qty",
+            "Egg Qty", 
+            "Paper Qty"
+        ];
+
+        let diasDelMes = 31;
+        let fechasDelMes = [];
+
+        // Inicializar la aplicación
+        function inicializarAplicacion() {
+            // Solo inicializar si el usuario está autenticado
+            if (!usuarioActual) return;
+            
+            // Inicializar años en el selector
+            inicializarSelectorAnio();
+            
+            // Configurar evento para cuando cambie el mes o año
+            document.getElementById('mes-control').addEventListener('change', function() {
+                actualizarDiasDelMes();
+                generarTabla();
+            });
+            
+            document.getElementById('anio-control').addEventListener('change', function() {
+                actualizarDiasDelMes();
+                generarTabla();
+            });
+            
+            // Establecer mes y año actual por defecto
+            const hoy = new Date();
+            document.getElementById('mes-control').value = hoy.getMonth();
+            document.getElementById('anio-control').value = hoy.getFullYear();
+            
+            // Actualizar días del mes y generar tabla
+            actualizarDiasDelMes();
+            generarTabla();
+            
+            // Protección adicional: desactivar arrastrar y soltar
+            document.addEventListener('dragstart', function(e) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+                    e.preventDefault();
+                }
+            });
+        }
+
+        // Inicializar selector de año
+        function inicializarSelectorAnio() {
+            const anioSelect = document.getElementById('anio-control');
+            const anioActual = new Date().getFullYear();
+            
+            // Agregar opciones para los últimos 2 años y próximos 2
+            for (let i = anioActual - 2; i <= anioActual + 2; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                if (i === anioActual) {
+                    option.selected = true;
+                }
+                anioSelect.appendChild(option);
+            }
+        }
+
+        // Actualizar días del mes según el mes y año seleccionados
+        function actualizarDiasDelMes() {
+            const mes = parseInt(document.getElementById('mes-control').value);
+            const anio = parseInt(document.getElementById('anio-control').value);
+            
+            // Obtener número de días del mes
+            diasDelMes = new Date(anio, mes + 1, 0).getDate();
+            
+            // Generar array de fechas
+            fechasDelMes = [];
+            for (let i = 1; i <= diasDelMes; i++) {
+                const fecha = new Date(anio, mes, i);
+                const dia = fecha.getDate();
+                const mesFormateado = (fecha.getMonth() + 1).toString().padStart(2, '0');
+                fechasDelMes.push(`${dia}/${mesFormateado}`);
+            }
+        }
+
+        // Generar la tabla
+        function generarTabla() {
+            const tabla = document.getElementById('registro-diario');
+            const thead = tabla.querySelector('thead');
+            const tbody = tabla.querySelector('tbody');
+            
+            // Limpiar encabezados existentes (excepto las dos primeras columnas)
+            while (thead.rows[0].cells.length > 2) {
+                thead.rows[0].deleteCell(-1);
+            }
+            
+            // Agregar columnas de días
+            for (let i = 0; i < diasDelMes; i++) {
+                const th = document.createElement('th');
+                th.className = 'day-cell day-header';
+                th.textContent = fechasDelMes[i];
+                th.title = `Día ${i+1}`;
+                thead.rows[0].appendChild(th);
+            }
+            
+            // Agregar columna de total
+            const thTotal = document.createElement('th');
+            thTotal.className = 'total-cell';
+            thTotal.textContent = 'Total';
+            thead.rows[0].appendChild(thTotal);
+            
+            // Limpiar cuerpo de la tabla
+            tbody.innerHTML = '';
+            
+            // Generar filas para cada combinación de dormitorio y producto
+            dormitorios.forEach(dormitorio => {
+                productos.forEach(producto => {
+                    const fila = document.createElement('tr');
+                    
+                    // Columna de dormitorio (solo se muestra en la primera fila de cada grupo)
+                    const tdDormitorio = document.createElement('td');
+                    tdDormitorio.className = 'room-cell';
+                    if (producto === productos[0]) {
+                        tdDormitorio.textContent = dormitorio;
+                        tdDormitorio.rowSpan = productos.length;
+                    } else {
+                        tdDormitorio.style.display = 'none';
+                    }
+                    fila.appendChild(tdDormitorio);
+                    
+                    // Columna de producto
+                    const tdProducto = document.createElement('td');
+                    tdProducto.className = 'product-cell';
+                    
+                    // Aplicar color de fondo según el producto
+                    if (producto === "Water Qty") {
+                        tdProducto.classList.add('water-bg');
+                    } else if (producto === "Egg Qty") {
+                        tdProducto.classList.add('egg-bg');
+                    } else if (producto === "Paper Qty") {
+                        tdProducto.classList.add('paper-bg');
+                    }
+                    
+                    tdProducto.textContent = producto;
+                    fila.appendChild(tdProducto);
+                    
+                    // Columnas de días
+                    for (let i = 1; i <= diasDelMes; i++) {
+                        const td = document.createElement('td');
+                        td.className = 'input-cell';
+                        
+                        // Aplicar color de fondo según el producto
+                        if (producto === "Water Qty") {
+                            td.classList.add('water-bg');
+                        } else if (producto === "Egg Qty") {
+                            td.classList.add('egg-bg');
+                        } else if (producto === "Paper Qty") {
+                            td.classList.add('paper-bg');
+                        }
+                        
+                        td.innerHTML = `<input type="text" name="${dormitorio}-${producto}-${i}" data-dormitorio="${dormitorio}" data-producto="${producto}" data-dia="${i}" onchange="calcularTotal(this)" placeholder="0">`;
+                        fila.appendChild(td);
+                    }
+                    
+                    // Columna de total
+                    const tdTotal = document.createElement('td');
+                    tdTotal.className = 'total-cell';
+                    tdTotal.id = `total-${dormitorio}-${producto}`;
+                    tdTotal.textContent = '0';
+                    
+                    // Aplicar color de fondo según el producto
+                    if (producto === "Water Qty") {
+                        tdTotal.classList.add('water-bg');
+                    } else if (producto === "Egg Qty") {
+                        tdTotal.classList.add('egg-bg');
+                    } else if (producto === "Paper Qty") {
+                        tdTotal.classList.add('paper-bg');
+                    }
+                    
+                    fila.appendChild(tdTotal);
+                    
+                    tbody.appendChild(fila);
+                });
+            });
+            
+            // Agregar fila de totales generales
+            const filaTotalGeneral = document.createElement('tr');
+            filaTotalGeneral.style.fontWeight = 'bold';
+            
+            // Celda de "Total" 
+            const tdTotalLabel = document.createElement('td');
+            tdTotalLabel.className = 'room-cell';
+            tdTotalLabel.textContent = 'TOTAL';
+            tdTotalLabel.colSpan = 2;
+            filaTotalGeneral.appendChild(tdTotalLabel);
+            
+            // Totales por día
+            for (let i = 1; i <= diasDelMes; i++) {
+                const td = document.createElement('td');
+                td.className = 'total-cell';
+                td.id = `total-dia-${i}`;
+                td.textContent = '0';
+                filaTotalGeneral.appendChild(td);
+            }
+            
+            // Total general
+            const tdTotalGeneral = document.createElement('td');
+            tdTotalGeneral.className = 'total-cell';
+            tdTotalGeneral.id = 'total-general';
+            tdTotalGeneral.textContent = '0';
+            filaTotalGeneral.appendChild(tdTotalGeneral);
+            
+            tbody.appendChild(filaTotalGeneral);
+        }
+
+        // Calcular totales
+        function calcularTotal(input) {
+            const dormitorio = input.getAttribute('data-dormitorio');
+            const producto = input.getAttribute('data-producto');
+            
+            // Sanitizar entrada
+            input.value = sanitizeInput(input.value);
+            
+            // Validar datos
+            if (!validateData(input.value)) {
+                input.value = '';
+                mostrarNotificacion('Solo se permiten números en este campo', 'error');
+                return;
+            }
+            
+            // Calcular total por dormitorio y producto
+            let total = 0;
+            for (let i = 1; i <= diasDelMes; i++) {
+                const inputDia = document.querySelector(`input[name="${dormitorio}-${producto}-${i}"]`);
+                const valor = parseInt(inputDia.value) || 0;
+                total += valor;
+            }
+            
+            // Actualizar total del producto
+            document.getElementById(`total-${dormitorio}-${producto}`).textContent = total;
+            
+            // Recalcular totales generales
+            calcularTotalesGenerales();
+        }
+
+        // Calcular totales generales por día y general
+        function calcularTotalesGenerales() {
+            // Calcular totales por día
+            for (let i = 1; i <= diasDelMes; i++) {
+                let totalDia = 0;
+                
+                dormitorios.forEach(dormitorio => {
+                    productos.forEach(producto => {
+                        const input = document.querySelector(`input[name="${dormitorio}-${producto}-${i}"]`);
+                        const valor = parseInt(input.value) || 0;
+                        totalDia += valor;
+                    });
+                });
+                
+                document.getElementById(`total-dia-${i}`).textContent = totalDia;
+            }
+            
+            // Calcular total general
+            let totalGeneral = 0;
+            for (let i = 1; i <= diasDelMes; i++) {
+                totalGeneral += parseInt(document.getElementById(`total-dia-${i}`).textContent);
+            }
+            
+            document.getElementById('total-general').textContent = totalGeneral;
+        }
+
+        // Función para guardar datos en localStorage
+        function guardarDatosLocal() {
+            try {
+                const mes = parseInt(document.getElementById('mes-control').value);
+                const anio = parseInt(document.getElementById('anio-control').value);
+                
+                const datos = {
+                    mes: mes,
+                    anio: anio,
+                    registros: {},
+                    ultimaActualizacion: new Date().toISOString()
+                };
+                
+                // Recopilar datos de todos los inputs
+                dormitorios.forEach(dormitorio => {
+                    datos.registros[dormitorio] = {};
+                    
+                    productos.forEach(producto => {
+                        datos.registros[dormitorio][producto] = {};
+                        
+                        for (let i = 1; i <= diasDelMes; i++) {
+                            const input = document.querySelector(`input[name="${dormitorio}-${producto}-${i}"]`);
+                            datos.registros[dormitorio][producto][i] = input.value || '';
+                        }
+                    });
+                });
+                
+                // Guardar en localStorage
+                const mesAnio = `${anio}-${(mes + 1).toString().padStart(2, '0')}`;
+                localStorage.setItem(`controlDormitorios_${mesAnio}`, JSON.stringify(datos));
+                
+                mostrarNotificacion('Datos guardados localmente correctamente', 'success');
+                    
+            } catch (error) {
+                mostrarNotificacion('Error al guardar los datos locales: ' + error.message, 'error');
+            }
+        }
+
+        // Función para cargar datos desde localStorage
+        function cargarDatosLocal() {
+            const mes = parseInt(document.getElementById('mes-control').value);
+            const anio = parseInt(document.getElementById('anio-control').value);
+            const mesAnio = `${anio}-${(mes + 1).toString().padStart(2, '0')}`;
+            
+            const datosGuardados = localStorage.getItem(`controlDormitorios_${mesAnio}`);
+            
+            if (datosGuardados) {
+                const datos = JSON.parse(datosGuardados);
+                aplicarDatos(datos);
+                mostrarNotificacion('Datos cargados localmente correctamente para ' + mesAnio, 'success');
+            } else {
+                mostrarNotificacion('No hay datos locales guardados para ' + mesAnio, 'error');
+            }
+        }
+
+        // Función combinada para guardar datos
+        function guardarDatos() {
+            guardarDatosLocal();
+            guardarDatosFirebase();
+        }
+
+        // Función combinada para cargar datos
+        function cargarDatos() {
+            // Primero intenta cargar desde Firebase, si falla carga desde localStorage
+            cargarDatosFirebase().catch(() => {
+                mostrarNotificacion('Intentando cargar desde almacenamiento local...', 'error');
+                setTimeout(() => {
+                    cargarDatosLocal();
+                }, 2000);
+            });
+        }
+
+        // Aplicar datos al formulario
+        function aplicarDatos(datos) {
+            // Aplicar valores a la tabla
+            dormitorios.forEach(dormitorio => {
+                productos.forEach(producto => {
+                    for (let i = 1; i <= diasDelMes; i++) {
+                        const input = document.querySelector(`input[name="${dormitorio}-${producto}-${i}"]`);
+                        if (input && datos.registros[dormitorio] && datos.registros[dormitorio][producto] && datos.registros[dormitorio][producto][i]) {
+                            // Sanitizar datos antes de mostrarlos
+                            input.value = sanitizeInput(datos.registros[dormitorio][producto][i]);
+                            if (input.value) input.classList.add('filled');
+                        }
+                    }
+                });
+            });
+            
+            // Recalcular totales
+            dormitorios.forEach(dormitorio => {
+                productos.forEach(producto => {
+                    calcularTotal(document.querySelector(`input[name="${dormitorio}-${producto}-1"]`));
+                });
+            });
+        }
+
+        // Función para exportar a Excel
+        function exportarExcel() {
+            try {
+                const wb = XLSX.utils.book_new();
+                const today = new Date();
+                const dateString = today.toISOString().split('T')[0];
+                const mes = parseInt(document.getElementById('mes-control').value);
+                const anio = parseInt(document.getElementById('anio-control').value);
+                const nombreMes = document.getElementById('mes-control').options[mes].text;
+                
+                // Crear hoja de registros
+                const datosRegistros = [];
+                
+                // Encabezados
+                const encabezados = ['Dormitorio', 'Producto', 'Día', 'Fecha', 'Cantidad'];
+                datosRegistros.push(encabezados);
+                
+                // Datos de registros
+                dormitorios.forEach(dormitorio => {
+                    productos.forEach(producto => {
+                        for (let i = 1; i <= diasDelMes; i++) {
+                            const input = document.querySelector(`input[name="${dormitorio}-${producto}-${i}"]`);
+                            const cantidad = input.value || '';
+                            
+                            if (cantidad) {
+                                const fecha = fechasDelMes[i-1];
+                                datosRegistros.push([dormitorio, producto, i, fecha, parseInt(cantidad)]);
+                            }
+                        }
+                    });
+                });
+                
+                const wsRegistros = XLSX.utils.aoa_to_sheet(datosRegistros);
+                XLSX.utils.book_append_sheet(wb, wsRegistros, 'Registros');
+                
+                // Crear hoja de resumen
+                const datosResumen = [
+                    ['Mes', nombreMes],
+                    ['Año', anio],
+                    ['Fecha de exportación', new Date().toLocaleDateString()],
+                    ['', ''],
+                    ['Dormitorio', 'Water Qty', 'Egg Qty', 'Paper Qty', 'Total por Dormitorio']
+                ];
+                
+                // Agregar totales por dormitorio
+                let totalWater = 0;
+                let totalEgg = 0;
+                let totalPaper = 0;
+                
+                dormitorios.forEach(dormitorio => {
+                    let totalDormitorio = 0;
+                    let water = 0;
+                    let egg = 0;
+                    let paper = 0;
+                    
+                    productos.forEach(producto => {
+                        const total = parseInt(document.getElementById(`total-${dormitorio}-${producto}`).textContent);
+                        totalDormitorio += total;
+                        
+                        if (producto === "Water Qty") water = total;
+                        if (producto === "Egg Qty") egg = total;
+                        if (producto === "Paper Qty") paper = total;
+                    });
+                    
+                    datosResumen.push([dormitorio, water, egg, paper, totalDormitorio]);
+                    
+                    totalWater += water;
+                    totalEgg += egg;
+                    totalPaper += paper;
+                });
+                
+                // Agregar totales generales
+                datosResumen.push(['TOTAL', totalWater, totalEgg, totalPaper, totalWater + totalEgg + totalPaper]);
+                
+                const wsResumen = XLSX.utils.aoa_to_sheet(datosResumen);
+                XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
+                
+                XLSX.writeFile(wb, `Control_Dormitorios_${nombreMes}_${anio}_${dateString}.xlsx`);
+                mostrarNotificacion('Datos exportados a Excel correctamente', 'success');
+            } catch (error) {
+                mostrarNotificacion('Error al exportar a Excel: ' + error.message, 'error');
+            }
+        }
+
+        // Mostrar notificación
+        function mostrarNotificacion(mensaje, tipo) {
+            const notification = document.getElementById('notification');
+            notification.textContent = mensaje;
+            notification.className = 'notification ' + tipo;
+            notification.style.opacity = '1';
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+            }, 3000);
+        }
+
+        // =============================================
+        // MEDIDAS DE SEGURIDAD
+        // =============================================
+        
+        // Desactivar clic derecho
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            showProtectionMessage();
+            return false;
+        });
+        
+        // Desactivar teclas de función
+        function disableKeys(e) {
+            // Desactivar F12
+            if (e.keyCode === 123) {
+                showProtectionMessage();
+                return false;
+            }
+            
+            // Desactivar Ctrl+U (Ver código fuente)
+            if (e.ctrlKey && e.keyCode === 85) {
+                showProtectionMessage();
+                return false;
+            }
+            
+            // Desactivar Ctrl+Shift+I (Herramientas de desarrollador)
+            if (e.ctrlKey && e.shiftKey && e.keyCode === 73) {
+                showProtectionMessage();
+                return false;
+            }
+            
+            // Desactivar Ctrl+Shift+C (Inspeccionar elemento)
+            if (e.ctrlKey && e.shiftKey && e.keyCode === 67) {
+                showProtectionMessage();
+                return false;
+            }
+            
+            // Desactivar Ctrl+Shift+J (Consola JavaScript)
+            if (e.ctrlKey && e.shiftKey && e.keyCode === 74) {
+                showProtectionMessage();
+                return false;
+            }
+            
+            return true;
+        }
+        
+        // Mostrar mensaje de protección
+        function showProtectionMessage() {
+            const message = document.getElementById('protection-message');
+            const overlay = document.getElementById('protection-overlay');
+            
+            message.style.display = 'block';
+            overlay.style.display = 'block';
+            
+            setTimeout(() => {
+                message.style.display = 'none';
+                overlay.style.display = 'none';
+            }, 2000);
+        }
+        
+        // Validación de ejecución segura
+        function secureExecute(func) {
+            try {
+                // Verificar que la función es válida y permitida
+                if (typeof func === 'function' && 
+                    (func.name === 'guardarDatos' || 
+                     func.name === 'cargarDatos' || 
+                     func.name === 'exportarExcel')) {
+                    return func();
+                } else {
+                    console.error('Intento de ejecución de función no permitida');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error de seguridad:', error);
+                return false;
+            }
+        }
+        
+        // Sanitizar entrada de datos
+        function sanitizeInput(input) {
+            if (typeof input !== 'string') return '';
+            
+            // Eliminar caracteres potencialmente peligrosos
+            return input.replace(/[<>{}()\[\]'"`;\\]/g, '');
+        }
+        
+        // Validar datos antes de procesarlos
+        function validateData(data) {
+            // Solo permitir números en los campos de cantidad
+            if (typeof data === 'string') {
+                return /^\d*$/.test(data);
+            }
+            return false;
+        }
+        
+        // =============================================
+        // INICIALIZACIÓN
+        // =============================================
+        
+        // Agregar evento al botón de login
+        document.getElementById('login-btn').addEventListener('click', iniciarSesion);
+        
+        // Permitir login con Enter
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                iniciarSesion();
+            }
+        });
+        
+        // Verificar si hay una sesión activa al cargar la página
+        window.onload = function() {
+            // Por defecto, mostrar la pantalla de login
+            document.getElementById('login-container').style.display = 'flex';
+            document.getElementById('app-container').style.display = 'none';
+        };
+    </script>
+</body>
+</html>
