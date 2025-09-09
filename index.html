@@ -555,17 +555,18 @@
         // CONFIGURACIÓN DE FIREBASE - REEMPLAZA CON TUS DATOS
         // =============================================
         const firebaseConfig = {
-            apiKey: "TU_API_KEY",
-            authDomain: "TU_PROYECTO.firebaseapp.com",
-            projectId: "TU_PROYECTO_ID",
-            storageBucket: "TU_PROYECTO.appspot.com",
-            messagingSenderId: "TU_MESSAGING_SENDER_ID",
-            appId: "TU_APP_ID"
+  apiKey: "AIzaSyCZRCjcH4v8J_zBrfVTJ4uzP_26Rsjdkhc",
+  authDomain: "control-agua-y-huevos-kr.firebaseapp.com",
+  projectId: "control-agua-y-huevos-kr",
+  storageBucket: "control-agua-y-huevos-kr.firebasestorage.app",
+  messagingSenderId: "107731658261",
+  appId: "1:107731658261:web:437b142fd83024e9d2901c",
+  measurementId: "G-5K75V1WLG0"
         };
         
         // Inicializar Firebase
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
         
         // Verificar conexión a Firebase
         const firebaseStatus = document.getElementById('firebase-status');
