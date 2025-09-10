@@ -576,7 +576,7 @@
                     <option value="4">Mayo</option>
                     <option value="5">Junio</option>
                     <option value="6">Julio</option>
-                    <option value="7">Agosto</option>
+                    <option value="7">Agusto</option>
                     <option value="8">Septiembre</option>
                     <option value="9">Octubre</option>
                     <option value="10">Noviembre</option>
@@ -619,7 +619,7 @@
             <p>Recibe notificaciones por correo cuando se realicen cambios importantes en el sistema.</p>
             <div class="toggle-container">
                 <label class="toggle-switch">
-                    <input type="checkbox" id="notificaciones-toggle">
+                    <input type="checkbox" id="notificaciones-toggle" checked>
                     <span class="slider"></span>
                 </label>
                 <span>Notificaciones por correo electrónico</span>
@@ -663,13 +663,14 @@
         // =============================================
         // Inicializar EmailJS con tu User ID
         (function() {
-            emailjs.init("YOUR_EMAILJS_USER_ID"); // Reemplaza con tu User ID de EmailJS
+            // Configuración de EmailJS con tus credenciales
+            emailjs.init("service_fbs9idh"); // Service ID como User ID
         })();
         
         // Configuración de EmailJS
         const EMAILJS_CONFIG = {
-            serviceId: "YOUR_EMAILJS_SERVICE_ID",    // Reemplaza con tu Service ID
-            templateId: "YOUR_EMAILJS_TEMPLATE_ID"   // Reemplaza con tu Template ID
+            serviceId: "service_fbs9idh",    // Service ID proporcionado
+            templateId: "template_avo22bp"   // Template ID proporcionado
         };
         
         // =============================================
@@ -695,15 +696,17 @@
             "auditor2": "aud678",
             "coordinador1": "cor901",
             "coordinador2": "cor234",
-            "asistente1": "asi567"
+            "asistente1": "asi567",
+            "luis": "luis123"  // Agregado para pruebas
         };
 
         // Configuración de notificaciones por correo
         const notificacionesCorreo = {
-            "admin": "admin@hansae.com",
-            "supervisor1": "supervisor1@hansae.com",
-            "supervisor2": "supervisor2@hansae.com",
-            "manager1": "gerente@hansae.com",
+            "admin": "luisithansae@gmail.com",
+            "supervisor1": "luisithansae@gmail.com",
+            "supervisor2": "luisithansae@gmail.com",
+            "manager1": "luisithansae@gmail.com",
+            "luis": "luisithansae@gmail.com"
             // Agrega más usuarios y sus correos según sea necesario
         };
         
@@ -734,6 +737,12 @@
                 document.getElementById('user-display').textContent = `Usuario: ${username}`;
                 mostrarNotificacion('Sesión iniciada correctamente', 'success');
                 
+                // Enviar notificación de inicio de sesión
+                enviarNotificacionCorreo(
+                    'Inicio de sesión en el sistema', 
+                    `El usuario ${username} ha iniciado sesión en el sistema de control de dormitorios.`
+                );
+                
                 // Inicializar la aplicación después de iniciar sesión
                 inicializarAplicacion();
             } else {
@@ -746,6 +755,12 @@
         
         // Función para cerrar sesión
         function cerrarSesion() {
+            // Enviar notificación de cierre de sesión
+            enviarNotificacionCorreo(
+                'Cierre de sesión en el sistema', 
+                `El usuario ${usuarioActual} ha cerrado sesión en el sistema de control de dormitorios.`
+            );
+            
             usuarioActual = null;
             document.getElementById('login-container').style.display = 'flex';
             document.getElementById('app-container').style.display = 'none';
@@ -767,7 +782,7 @@
             
             try {
                 // Obtener el correo del usuario actual si está configurado
-                const correoDestino = notificacionesCorreo[usuarioActual] || "admin@hansae.com";
+                const correoDestino = notificacionesCorreo[usuarioActual] || "luisithansae@gmail.com";
                 
                 // Parámetros para la plantilla de EmailJS
                 const templateParams = {
@@ -776,7 +791,8 @@
                     subject: asunto,
                     message: mensaje,
                     reply_to: "no-reply@hansae.com",
-                    date: new Date().toLocaleDateString('es-ES')
+                    date: new Date().toLocaleDateString('es-ES'),
+                    user: usuarioActual || "Usuario no identificado"
                 };
                 
                 // Enviar usando EmailJS
@@ -881,6 +897,13 @@
                     const datos = doc.data();
                     aplicarDatos(datos);
                     mostrarNotificacion('Datos cargados desde la nube correctamente', 'success');
+                    
+                    // Enviar notificación por correo
+                    const nombreMes = document.getElementById('mes-control').options[mes].text;
+                    await enviarNotificacionCorreo(
+                        'Datos cargados desde la nube', 
+                        `El usuario ${usuarioActual} ha cargado datos para ${nombreMes} ${anio} desde Firebase.`
+                    );
                 } else {
                     mostrarNotificacion('No hay datos en la nube para ' + mesAnio, 'error');
                 }
@@ -1523,6 +1546,9 @@
             // Por defecto, mostrar la pantalla de login
             document.getElementById('login-container').style.display = 'flex';
             document.getElementById('app-container').style.display = 'none';
+            
+            // Inicializar EmailJS
+            emailjs.init("service_fbs9idh");
         });
     </script>
 </body>
