@@ -9,6 +9,8 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <!-- EmailJS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3.2.0/dist/email.min.js"></script>
     <style>
         * {
             box-sizing: border-box;
@@ -657,6 +659,20 @@
         const db = firebase.firestore();
         
         // =============================================
+        // CONFIGURACIÓN DE EMAILJS (ENVÍO DE CORREOS)
+        // =============================================
+        // Inicializar EmailJS con tu User ID
+        (function() {
+            emailjs.init("YOUR_EMAILJS_USER_ID"); // Reemplaza con tu User ID de EmailJS
+        })();
+        
+        // Configuración de EmailJS
+        const EMAILJS_CONFIG = {
+            serviceId: "YOUR_EMAILJS_SERVICE_ID",    // Reemplaza con tu Service ID
+            templateId: "YOUR_EMAILJS_TEMPLATE_ID"   // Reemplaza con tu Template ID
+        };
+        
+        // =============================================
         // SISTEMA DE USUARIOS
         // =============================================
         const usuariosPermitidos = {
@@ -739,10 +755,10 @@
         }
         
         // =============================================
-        // SISTEMA DE NOTIFICACIONES POR CORREO
+        // SISTEMA DE NOTIFICACIONES POR CORREO CON EMAILJS
         // =============================================
         
-        // Función para enviar notificación por correo (simulada)
+        // Función para enviar notificación por correo usando EmailJS
         async function enviarNotificacionCorreo(asunto, mensaje) {
             // Verificar si las notificaciones están activadas
             if (!document.getElementById('notificaciones-toggle').checked) {
@@ -750,17 +766,34 @@
             }
             
             try {
-                // Aquí se simularía el envío de correo
-                // En una implementación real, esto conectaría con un servicio de correo
-                // o usaría Firebase Functions para enviar el correo
+                // Obtener el correo del usuario actual si está configurado
+                const correoDestino = notificacionesCorreo[usuarioActual] || "admin@hansae.com";
                 
-                console.log(`[NOTIFICACIÓN] ${asunto}: ${mensaje}`);
+                // Parámetros para la plantilla de EmailJS
+                const templateParams = {
+                    to_email: correoDestino,
+                    from_name: "Sistema de Control Hansae",
+                    subject: asunto,
+                    message: mensaje,
+                    reply_to: "no-reply@hansae.com",
+                    date: new Date().toLocaleDateString('es-ES')
+                };
+                
+                // Enviar usando EmailJS
+                await emailjs.send(
+                    EMAILJS_CONFIG.serviceId, 
+                    EMAILJS_CONFIG.templateId, 
+                    templateParams
+                );
+                
+                console.log('Correo enviado exitosamente a:', correoDestino);
                 
                 // Guardar notificación en Firebase para registro
                 const notificacionData = {
                     usuario: usuarioActual,
                     asunto: asunto,
                     mensaje: mensaje,
+                    destinatario: correoDestino,
                     timestamp: new Date().toISOString(),
                     leida: false
                 };
@@ -768,7 +801,8 @@
                 await db.collection('notificaciones').add(notificacionData);
                 
             } catch (error) {
-                console.error("Error al enviar notificación:", error);
+                console.error("Error al enviar correo:", error);
+                mostrarNotificacion('Error al enviar notificación por correo', 'error');
             }
         }
         
