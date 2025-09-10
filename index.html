@@ -1382,21 +1382,20 @@
         // =============================================
         
         // Agregar evento al botón de login
-        document.getElementById('login-btn').addEventListener('click', iniciarSesion);
-        
-        // Permitir login con Enter
-        document.getElementById('password').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                iniciarSesion();
-            }
-        });
-        
-        // Verificar si hay una sesión activa al cargar la página
-        window.onload = function() {
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('login-btn').addEventListener('click', iniciarSesion);
+            
+            // Permitir login con Enter
+            document.getElementById('password').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    iniciarSesion();
+                }
+            });
+            
             // Por defecto, mostrar la pantalla de login
             document.getElementById('login-container').style.display = 'flex';
             document.getElementById('app-container').style.display = 'none';
-        };
+        });
     </script>
 </body>
 </html>
