@@ -163,7 +163,7 @@
             font-weight: bold;
         }
         
-        .day-cell {
+        .week-cell {
             width: 70px;
             min-width: 70px;
         }
@@ -303,7 +303,7 @@
             font-weight: bold;
         }
         
-        .day-header {
+        .week-header {
             font-weight: bold;
             background-color: #ffcc00;
             font-size: 12px;
@@ -315,7 +315,7 @@
                 max-width: 2000px;
             }
             
-            .day-cell {
+            .week-cell {
                 width: 80px;
             }
             
@@ -529,12 +529,12 @@
         </div>
         
         <div class="main-container">
-            <table id="registro-diario">
+            <table id="registro-semanal">
                 <thead>
                     <tr>
                         <th class="room-cell">Apartamento</th>
                         <th class="product-cell">Producto</th>
-                        <!-- Los días se generarán con JavaScript -->
+                        <!-- Las semanas se generarán con JavaScript -->
                         <th class="total-cell">Total</th>
                     </tr>
                 </thead>
@@ -618,6 +618,7 @@
         let usuarioActual = null;
         let autoSaveTimeout = null;
         const AUTO_SAVE_DELAY = 2000; // 2 segundos después de la última modificación
+        const NUM_SEMANAS = 5; // Número de semanas a mostrar
         
         // Función para iniciar sesión
         function iniciarSesion() {
@@ -694,7 +695,7 @@
                     productos.forEach(producto => {
                         datos.registros[dormitorio][producto] = {};
                         
-                        for (let i = 1; i <= diasDelMes; i++) {
+                        for (let i = 1; i <= NUM_SEMANAS; i++) {
                             const input = document.querySelector(`input[name="${dormitorio}-${producto}-${i}"]`);
                             datos.registros[dormitorio][producto][i] = input.value || '';
                         }
@@ -791,8 +792,8 @@
             "Paper Qty"
         ];
 
-        let diasDelMes = 31;
-        let fechasDelMes = [];
+        let semanasDelMes = [];
+        let fechasSemanas = [];
 
         // Inicializar la aplicación
         function inicializarAplicacion() {
@@ -804,14 +805,14 @@
             
             // Configurar evento para cuando cambie el mes o año
             document.getElementById('mes-control').addEventListener('change', function() {
-                actualizarDiasDelMes();
+                actualizarSemanasDelMes();
                 generarTabla();
                 // Guardar automáticamente al cambiar de mes
                 programarGuardadoAutomatico();
             });
             
             document.getElementById('anio-control').addEventListener('change', function() {
-                actualizarDiasDelMes();
+                actualizarSemanasDelMes();
                 generarTabla();
                 // Guardar automáticamente al cambiar de año
                 programarGuardadoAutomatico();
@@ -822,8 +823,8 @@
             document.getElementById('mes-control').value = hoy.getMonth();
             document.getElementById('anio-control').value = hoy.getFullYear();
             
-            // Actualizar días del mes y generar tabla
-            actualizarDiasDelMes();
+            // Actualizar semanas del mes y generar tabla
+            actualizarSemanasDelMes();
             generarTabla();
             
             // Protección adicional: desactivar arrastrar y soltar
@@ -851,27 +852,59 @@
             }
         }
 
-        // Actualizar días del mes según el mes y año seleccionados
-        function actualizarDiasDelMes() {
+        // Obtener el número de semana del año para una fecha
+        function getNumeroSemana(fecha) {
+            const firstDayOfYear = new Date(fecha.getFullYear(), 0, 1);
+            const pastDaysOfYear = (fecha - firstDayOfYear) / 86400000;
+            return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+        }
+
+        // Actualizar semanas del mes según el mes y año seleccionados
+        function actualizarSemanasDelMes() {
             const mes = parseInt(document.getElementById('mes-control').value);
             const anio = parseInt(document.getElementById('anio-control').value);
             
-            // Obtener número de días del mes
-            diasDelMes = new Date(anio, mes + 1, 0).getDate();
+            // Obtener el primer día del mes
+            const primerDiaMes = new Date(anio, mes, 1);
             
-            // Generar array de fechas
-            fechasDelMes = [];
-            for (let i = 1; i <= diasDelMes; i++) {
-                const fecha = new Date(anio, mes, i);
-                const dia = fecha.getDate();
-                const mesFormateado = (fecha.getMonth() + 1).toString().padStart(2, '0');
-                fechasDelMes.push(`${dia}/${mesFormateado}`);
+            // Obtener el último día del mes
+            const ultimoDiaMes = new Date(anio, mes + 1, 0);
+            
+            // Generar array de semanas
+            semanasDelMes = [];
+            fechasSemanas = [];
+            
+            // Obtener la semana del primer día del mes
+            let semanaActual = getNumeroSemana(primerDiaMes);
+            
+            // Para cada una de las 5 semanas
+            for (let i = 1; i <= NUM_SEMANAS; i++) {
+                semanasDelMes.push(semanaActual);
+                
+                // Calcular una fecha representativa de esta semana (el miércoles)
+                const diaDeLaSemana = primerDiaMes.getDay(); // 0 (domingo) a 6 (sábado)
+                let diasHastaMiercoles = 3 - diaDeLaSemana;
+                if (diasHastaMiercoles < 0) diasHastaMiercoles += 7;
+                
+                const fechaRepresentativa = new Date(primerDiaMes);
+                fechaRepresentativa.setDate(primerDiaMes.getDate() + diasHastaMiercoles + (i-1)*7);
+                
+                // Formatear como "NúmeroSemana/Mes"
+                const mesFormateado = (fechaRepresentativa.getMonth() + 1).toString().padStart(2, '0');
+                fechasSemanas.push(`${semanaActual}/${mesFormateado}`);
+                
+                semanaActual++;
+                
+                // Si llegamos al final del año, reiniciar la semana
+                if (semanaActual > 52) {
+                    semanaActual = 1;
+                }
             }
         }
 
         // Generar la tabla
         function generarTabla() {
-            const tabla = document.getElementById('registro-diario');
+            const tabla = document.getElementById('registro-semanal');
             const thead = tabla.querySelector('thead');
             const tbody = tabla.querySelector('tbody');
             
@@ -880,12 +913,12 @@
                 thead.rows[0].deleteCell(-1);
             }
             
-            // Agregar columnas de días
-            for (let i = 0; i < diasDelMes; i++) {
+            // Agregar columnas de semanas
+            for (let i = 0; i < NUM_SEMANAS; i++) {
                 const th = document.createElement('th');
-                th.className = 'day-cell day-header';
-                th.textContent = fechasDelMes[i];
-                th.title = `Día ${i+1}`;
+                th.className = 'week-cell week-header';
+                th.textContent = fechasSemanas[i];
+                th.title = `Semana ${semanasDelMes[i]}`;
                 thead.rows[0].appendChild(th);
             }
             
@@ -930,8 +963,8 @@
                     tdProducto.textContent = producto;
                     fila.appendChild(tdProducto);
                     
-                    // Columnas de días
-                    for (let i = 1; i <= diasDelMes; i++) {
+                    // Columnas de semanas
+                    for (let i = 1; i <= NUM_SEMANAS; i++) {
                         const td = document.createElement('td');
                         td.className = 'input-cell';
                         
@@ -945,7 +978,7 @@
                         }
                         
                         // Modificado: agregar evento input para guardado automático
-                        td.innerHTML = `<input type="text" name="${dormitorio}-${producto}-${i}" data-dormitorio="${dormitorio}" data-producto="${producto}" data-dia="${i}" oninput="calcularTotal(this); programarGuardadoAutomatico();" placeholder="0">`;
+                        td.innerHTML = `<input type="text" name="${dormitorio}-${producto}-${i}" data-dormitorio="${dormitorio}" data-producto="${producto}" data-semana="${i}" oninput="calcularTotal(this); programarGuardadoAutomatico();" placeholder="0">`;
                         fila.appendChild(td);
                     }
                     
@@ -981,11 +1014,11 @@
             tdTotalLabel.colSpan = 2;
             filaTotalGeneral.appendChild(tdTotalLabel);
             
-            // Totales por día
-            for (let i = 1; i <= diasDelMes; i++) {
+            // Totales por semana
+            for (let i = 1; i <= NUM_SEMANAS; i++) {
                 const td = document.createElement('td');
                 td.className = 'total-cell';
-                td.id = `total-dia-${i}`;
+                td.id = `total-semana-${i}`;
                 td.textContent = '0';
                 filaTotalGeneral.appendChild(td);
             }
@@ -1017,9 +1050,9 @@
             
             // Calcular total por dormitorio y producto
             let total = 0;
-            for (let i = 1; i <= diasDelMes; i++) {
-                const inputDia = document.querySelector(`input[name="${dormitorio}-${producto}-${i}"]`);
-                const valor = parseInt(inputDia.value) || 0;
+            for (let i = 1; i <= NUM_SEMANAS; i++) {
+                const inputSemana = document.querySelector(`input[name="${dormitorio}-${producto}-${i}"]`);
+                const valor = parseInt(inputSemana.value) || 0;
                 total += valor;
             }
             
@@ -1030,27 +1063,27 @@
             calcularTotalesGenerales();
         }
 
-        // Calcular totales generales por día y general
+        // Calcular totales generales por semana y general
         function calcularTotalesGenerales() {
-            // Calcular totales por día
-            for (let i = 1; i <= diasDelMes; i++) {
-                let totalDia = 0;
+            // Calcular totales por semana
+            for (let i = 1; i <= NUM_SEMANAS; i++) {
+                let totalSemana = 0;
                 
                 dormitorios.forEach(dormitorio => {
                     productos.forEach(producto => {
                         const input = document.querySelector(`input[name="${dormitorio}-${producto}-${i}"]`);
                         const valor = parseInt(input.value) || 0;
-                        totalDia += valor;
+                        totalSemana += valor;
                     });
                 });
                 
-                document.getElementById(`total-dia-${i}`).textContent = totalDia;
+                document.getElementById(`total-semana-${i}`).textContent = totalSemana;
             }
             
             // Calcular total general
             let totalGeneral = 0;
-            for (let i = 1; i <= diasDelMes; i++) {
-                totalGeneral += parseInt(document.getElementById(`total-dia-${i}`).textContent);
+            for (let i = 1; i <= NUM_SEMANAS; i++) {
+                totalGeneral += parseInt(document.getElementById(`total-semana-${i}`).textContent);
             }
             
             document.getElementById('total-general').textContent = totalGeneral;
@@ -1076,7 +1109,7 @@
                     productos.forEach(producto => {
                         datos.registros[dormitorio][producto] = {};
                         
-                        for (let i = 1; i <= diasDelMes; i++) {
+                        for (let i = 1; i <= NUM_SEMANAS; i++) {
                             const input = document.querySelector(`input[name="${dormitorio}-${producto}-${i}"]`);
                             datos.registros[dormitorio][producto][i] = input.value || '';
                         }
@@ -1134,7 +1167,7 @@
             // Aplicar valores a la tabla
             dormitorios.forEach(dormitorio => {
                 productos.forEach(producto => {
-                    for (let i = 1; i <= diasDelMes; i++) {
+                    for (let i = 1; i <= NUM_SEMANAS; i++) {
                         const input = document.querySelector(`input[name="${dormitorio}-${producto}-${i}"]`);
                         if (input && datos.registros[dormitorio] && datos.registros[dormitorio][producto] && datos.registros[dormitorio][producto][i]) {
                             // Sanitizar datos antes de mostrarlos
@@ -1167,18 +1200,18 @@
                 const datosRegistros = [];
                 
                 // Encabezados
-                const encabezados = ['Dormitorio', 'Producto', 'Día', 'Fecha', 'Cantidad'];
+                const encabezados = ['Dormitorio', 'Producto', 'Semana', 'Fecha', 'Cantidad'];
                 datosRegistros.push(encabezados);
                 
                 // Datos de registros
                 dormitorios.forEach(dormitorio => {
                     productos.forEach(producto => {
-                        for (let i = 1; i <= diasDelMes; i++) {
+                        for (let i = 1; i <= NUM_SEMANAS; i++) {
                             const input = document.querySelector(`input[name="${dormitorio}-${producto}-${i}"]`);
                             const cantidad = input.value || '';
                             
                             if (cantidad) {
-                                const fecha = fechasDelMes[i-1];
+                                const fecha = fechasSemanas[i-1];
                                 datosRegistros.push([dormitorio, producto, i, fecha, parseInt(cantidad)]);
                             }
                         }
@@ -1258,7 +1291,7 @@
             e.preventDefault();
             showProtectionMessage();
             return false;
-        }
+        });
         
         // Desactivar teclas de función
         function disableKeys(e) {
